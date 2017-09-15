@@ -16,8 +16,6 @@ def word_count(path):
                 count_dic[word] =  1
             else:
                 count_dic[word] = count_dic[word] + 1
-    #print (count_dic, '\n') 
-    #print (word_list_count, '\n')   
     return word_list_count, count_dic
 
 def write_file(word_list_count, count_dic):
