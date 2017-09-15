@@ -1,5 +1,5 @@
-# !/bin/sh
+#!/bin/sh
 
-python3 Q2.py $1
+python Q2.py $1
 
 

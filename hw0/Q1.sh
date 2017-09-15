@@ -1,3 +1,3 @@
-# !/bin/sh
+#!/bin/sh
 
-python3 Q1.py $1
+python Q1.py $1
