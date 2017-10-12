@@ -14,12 +14,13 @@ index2 = sys.argv[2]
 select_hour = 9
 select_column = 9
 need_column = [2, 7, 8, 9, 10, 12, 14, 15, 16, 17]
+need_column2 = [2, 7, 8, 9, 10, 12, 16, 17]
 need_num = len(need_column)
 
 # gradient descent parameters setting
-lamda = 1e-4      # regularization rate
+lamda = 1e-3      # regularization rate
 lr = 0.5
-max_iteration = 100000
+max_iteration = 40000
 
 
 def traincsv_to_traindata(path):
@@ -35,30 +36,44 @@ def traincsv_to_traindata(path):
         train_data = train_data.reshape(12, 20, 18, 24)
         train_data = train_data.swapaxes(1, 2).reshape(12, 18, 480)
         # print(train_data) shape = (12, 18, 480)
+        train_data = np.concatenate((train_data[:6], train_data[7:]))
     return train_data
 
 
 def get_specific_features_in_9_hours(train_data):
+    train_feature1 = []
+    train_feature2 = []
     train_feature = []
     train_label = []
     # mon: month number
-    for mon in range(12):
+    for mon in range(len(train_data)):
         # m: feature sets number every month (480 - 9 = 471)
         for num in range(480 - select_hour):
-            train_feature.append(
+            train_feature1.append(
                 np.array([train_data[mon][col][num: num + select_hour] for col in need_column]))
             train_label.append(
                 train_data[mon][select_column][num + select_hour])
-    train_feature = np.array(train_feature)
-    # print(train_feature, train_feature.shape)
-    o3_col = train_feature[:, 1].reshape(len(train_feature), select_hour)
-    pm25_col = train_feature[:, 3].reshape(len(train_feature), select_hour)
-    mul_col = o3_col * pm25_col
-    train_feature = train_feature.reshape(len(train_feature), -1)
+    for mon in range(len(train_data)):
+        # m: feature sets number every month (480 - 9 = 471)
+        for num in range(480 - select_hour):
+            train_feature2.append(
+                np.array([train_data[mon][col][num: num + select_hour] for col in need_column2]))
+
+    train_feature1 = np.array(train_feature1)  # shape = (5181, 10, 9)
+    train_feature2 = np.array(train_feature2)  # shape = (5181, 8, 9)
+    #print(train_feature1.shape, train_feature2.shape)
     train_label = np.array(train_label)
+
+    o3_col = train_feature1[:, 1].reshape(len(train_feature1), select_hour)
+    pm25_col = train_feature1[:, 3].reshape(len(train_feature1), select_hour)
+    mul_col = o3_col * pm25_col  # shape = (5181, 9)
+    # print(mul_col.shape)
+    train_feature1 = train_feature1.reshape(len(train_feature1), -1)
+    train_feature2 = train_feature2.reshape(len(train_feature2), -1)
+
     train_feature = np.concatenate(
-        (train_feature, train_feature**2, mul_col), axis=1)
-    # train_feature shape (5652, 189) train_label shape (5652,)
+        (train_feature1, train_feature2**2, mul_col), axis=1)
+    # train_feature shape (5181, 171) train_label shape (5181,)
     return train_feature, train_label
 
 
@@ -89,7 +104,7 @@ def gradient_descent(train_feature, train_label, lr, lamda, max_iteration):
         # print(error, error.shape)
 
         # calculate w_grad, b_grad
-        w_grad = w_grad - 2.0 * np.dot(error, train_feature) + 2 * lamda * w
+        w_grad = w_grad - 2.0 * np.dot(error, train_feature)
         # print(w_grad.shape)
         b_grad = b_grad - 2.0 * np.sum(error)
 
@@ -98,7 +113,7 @@ def gradient_descent(train_feature, train_label, lr, lamda, max_iteration):
         b_lr = b_lr + b_grad ** 2
 
         # update w, b
-        w = w - lr / np.sqrt(w_lr) * w_grad
+        w = w - lr / np.sqrt(w_lr) * (w_grad - lamda * w)
         b = b - lr / np.sqrt(b_lr) * b_grad
         # print(w, '\n', b, '\n')
 
@@ -111,7 +126,7 @@ def gradient_descent(train_feature, train_label, lr, lamda, max_iteration):
 
 
 def w_b_to_model_csv(w, b):
-    with open('./linear_regression_model.csv', 'w') as model_csv:
+    with open('./kaggle_best_model.csv', 'w') as model_csv:
         for i in range(len(w)):
             model_csv.write('w_%d=' % (i + 1))
             model_csv.write(str(w[i]) + '\n')
@@ -134,23 +149,27 @@ def testcsv_to_testdata(path):
 
 
 def testdata_to_feature(test_data):
+    test_feature1 = []
+    test_feature2 = []
     test_feature = []
     for i in range(test_data.shape[0]):
-        test_feature.append(
+        test_feature1.append(
             np.array([test_data[i][col][9 - select_hour:] for col in need_column]))
-    test_feature = np.array(test_feature)
-    return test_feature
-
-
-def add_test_feature(test_feature):
-    o3_col = test_feature[:, 1].reshape(len(test_feature), select_hour)
-    pm25_col = test_feature[:, 3].reshape(len(test_feature), select_hour)
+    for i in range(test_data.shape[0]):
+        test_feature2.append(
+            np.array([test_data[i][col][9 - select_hour:] for col in need_column2]))
+    test_feature1 = np.array(test_feature1)  # shape = (240, 10, 9)
+    test_feature2 = np.array(test_feature2)  # shape = (240, 8, 9)
+    #print(test_feature1.shape, test_feature2.shape)
+    o3_col = test_feature1[:, 1].reshape(len(test_feature1), -1)
+    pm25_col = test_feature1[:, 3].reshape(len(test_feature1), -1)
     mul_col = o3_col * pm25_col
-    test_feature = test_feature.reshape(len(test_feature), -1)
-    # print(test_feature, test_feature.shape)
+
+    test_feature1 = test_feature1.reshape(len(test_feature1), -1)
+    test_feature2 = test_feature2.reshape(len(test_feature2), -1)
+
     test_feature = np.concatenate(
-        (test_feature, test_feature**2, mul_col), axis=1)
-    # print(test_feature, test_feature.shape)
+        (test_feature1, test_feature2**2, mul_col), axis=1)
     return test_feature
 
 
@@ -182,66 +201,38 @@ def model_csv_to_w_b(model_csv):
 
 
 def main():
-    train_data = traincsv_to_traindata(index)
-    # test_data = testcsv_to_testdata('./data/test.csv')
-    test_data = testcsv_to_testdata(index1)
-
-    # print(train_data.shape, test_data.shape)
-
-    # train_feature shape = (5652, 189) train_label shape = (5652, )
+    train_data = traincsv_to_traindata(index)  # shape = (11, 18, 480)
     train_feature, train_label = get_specific_features_in_9_hours(train_data)
-    # print(train_feature, train_feature.shape)
-    # print(train_label, train_label.shape)
+    # print(train_feature.shape)
     normal_train_feature = normalize_data(train_feature, train_feature)
-    # print(normal_train_feature, normal_train_feature.shape)
-
-    w, b = gradient_descent(normal_train_feature, train_label,
-                            lr, lamda, max_iteration)
-    # print(w, b)
-    # print(w.shape, b.shape)
-    # print(w.dtype, b.dtype)
+    w, b = gradient_descent(normal_train_feature,
+                            train_label, lr, lamda, max_iteration)
     w_b_to_model_csv(w, b)
-
-    test_feature = testdata_to_feature(test_data)  # shape=(240, 10, 9)
-    # print(test_feature, test_feature.shape)
-    test_feature = add_test_feature(test_feature)  # shape=(240, 189)
-    # print(test_feature, test_feature.shape)
+    test_data = testcsv_to_testdata(index1)
+    test_feature = testdata_to_feature(test_data)
+    # print(test_feature)
     normal_test_feature = normalize_data(test_feature, train_feature)
-    # print(normal_test_feature, normal_test_feature.shape)
+    #print(normal_test_feature, normal_test_feature.shape)
     test_label = calculate_test_data(w, b, normal_test_feature)
-    # print(w, b)
-    # output_write_into_file('./res.csv', test_label)
     output_write_into_file(index2, test_label)
 
 
 def main2():
-    train_data = traincsv_to_traindata(index)
-    # test_data = testcsv_to_testdata('./data/test.csv')
-    test_data = testcsv_to_testdata(index1)
-
-    # print(train_data.shape, test_data.shape)
-
-    # train_feature shape = (5652, 189) train_label shape = (5652, )
+    train_data = traincsv_to_traindata(index)  # shape = (11, 18, 480)
     train_feature, train_label = get_specific_features_in_9_hours(train_data)
-    # print(train_feature, train_feature.shape)
-    # print(train_label, train_label.shape)
-    w, b = model_csv_to_w_b('./linear_regression_model.csv')
-    # print(w, b)
-    # print(w.shape, b.shape)
-    test_feature = testdata_to_feature(test_data)  # shape=(240, 10, 9)
-    # print(test_feature, test_feature.shape)
-    test_feature = add_test_feature(test_feature)  # shape=(240, 189)
-    # print(test_feature, test_feature.shape)
+    # print(train_feature.shape)
+    w, b = model_csv_to_w_b('./kaggle_best_model.csv')
+    test_data = testcsv_to_testdata(index1)
+    test_feature = testdata_to_feature(test_data)
+    # print(test_feature)
     normal_test_feature = normalize_data(test_feature, train_feature)
-    # print(normal_test_feature, normal_test_feature.shape)
+    #print(normal_test_feature, normal_test_feature.shape)
     test_label = calculate_test_data(w, b, normal_test_feature)
-    # print(w, b)
-    # output_write_into_file('./res.csv', test_label)
     output_write_into_file(index2, test_label)
 
 
 if __name__ == '__main__':
-    is_file = os.path.isfile('./linear_regression_model.csv')
+    is_file = os.path.isfile('./kaggle_best_model.csv')
     # print(is_file)
     if (False == is_file):
         main()
