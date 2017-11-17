@@ -52,7 +52,7 @@ def main():
         nb_filter = 32
         for i in range(nb_filter):
             ax = fig.add_subplot(nb_filter / 8, 8, i + 1)
-            ax.imshow(im[0][0, :, :, i], cmap='Purples')
+            ax.imshow(im[0][0, :, :, i], cmap='summer')
             plt.xticks(np.array([]))
             plt.yticks(np.array([]))
             plt.tight_layout()
