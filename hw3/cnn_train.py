@@ -12,7 +12,7 @@ from keras.optimizers import Adam
 
 
 #--------input parameters--------
-idnex1 = sys.argv[1]
+index1 = sys.argv[1]
 index2 = './cnn_model'
 
 #---------inital parameters------
