@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
 
 # $1: testing data   $2: prediction file
 wget 'https://www.dropbox.com/s/pen79drewxwicg2/cnn_model'

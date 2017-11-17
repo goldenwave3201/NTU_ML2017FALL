@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
 
 # $1: training data
 python3 cnn_train.py $1
