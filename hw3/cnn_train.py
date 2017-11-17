@@ -13,7 +13,7 @@ from keras.optimizers import Adam
 
 #--------input parameters--------
 idnex1 = sys.argv[1]
-index2 = './model/cnn_model'
+index2 = './cnn_model'
 
 #---------inital parameters------
 optlr = 1e-4

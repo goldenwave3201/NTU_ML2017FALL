@@ -43,7 +43,6 @@ def main():
     labels, pixels = read_features(data_path)
     choose_id = 9
     photo = pixels[choose_id].reshape(1, 48, 48, 1)
-    #photo = np.random.normal().reshape(1, 48, 48, 1)
 
     for cnt, fn in enumerate(collect_layers):
         im = fn([photo, 0])
