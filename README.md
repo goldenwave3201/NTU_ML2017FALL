@@ -1,6 +1,6 @@
 # Machine Learning, 2017 Fall
-EE5184, National Taiwan University
-http://speech.ee.ntu.edu.tw/~tlkagk/courses_ML17_2.html
++ EE5184, National Taiwan University
++ http://speech.ee.ntu.edu.tw/~tlkagk/courses_ML17_2.html
 
 
 ## Details of Projects
